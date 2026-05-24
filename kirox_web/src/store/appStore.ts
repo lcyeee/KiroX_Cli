@@ -21,6 +21,7 @@ interface AppState {
 
   logs: string;
   appendLogs: (log: string) => void;
+  setLogs: (logs: string) => void;
   clearLogs: () => void;
 
   elapsed: string;
@@ -33,6 +34,12 @@ interface AppState {
 
   results: RegistrationResult[];
   setResults: (results: RegistrationResult[]) => void;
+
+  loading: boolean;
+  setLoading: (loading: boolean) => void;
+
+  error: string | null;
+  setError: (error: string | null) => void;
 }
 
 const defaultParams: RunParams = {
@@ -62,6 +69,7 @@ export const useAppStore = create<AppState>((set) => ({
 
   logs: "",
   appendLogs: (log) => set((state) => ({ logs: state.logs + log })),
+  setLogs: (logs) => set({ logs }),
   clearLogs: () => set({ logs: "" }),
 
   elapsed: "0s",
@@ -74,4 +82,10 @@ export const useAppStore = create<AppState>((set) => ({
 
   results: [],
   setResults: (results) => set({ results }),
+
+  loading: false,
+  setLoading: (loading) => set({ loading }),
+
+  error: null,
+  setError: (error) => set({ error }),
 }));

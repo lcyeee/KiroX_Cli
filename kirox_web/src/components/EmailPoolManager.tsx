@@ -1,40 +1,31 @@
 import { useState } from "react";
 import { Mail, Upload, ClipboardPaste, Eye, X, Table } from "lucide-react";
 import { useAppStore } from "@/store/appStore";
+import { parseOutlook, uploadOutlook, listOutlook } from "@/api/client";
 import type { OutlookAccount } from "@/types";
-
-function parseOutlookLines(data: string): OutlookAccount[] {
-  const accounts: OutlookAccount[] = [];
-  const trimmed = data.trim();
-  if (!trimmed) return accounts;
-
-  const lines = trimmed.split("\n");
-  for (const line of lines) {
-    const l = line.trim();
-    if (!l || l.startsWith("#")) continue;
-    const parts = l.split("----", 4);
-    if (parts.length === 4) {
-      accounts.push({
-        email: parts[0].trim(),
-        password: parts[1].trim(),
-        clientId: parts[2].trim(),
-        refreshToken: parts[3].trim(),
-      });
-    }
-  }
-  return accounts;
-}
 
 export function EmailPoolManager() {
   const { outlookAccounts, setOutlookAccounts, setOutlookLoaded, outlookLoaded } = useAppStore();
   const [activeTab, setActiveTab] = useState<"upload" | "preview">("upload");
   const [outlookText, setOutlookText] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [serverAccounts, setServerAccounts] = useState<OutlookAccount[]>([]);
+  const [serverCount, setServerCount] = useState(0);
 
-  const handleLoad = () => {
-    const accounts = parseOutlookLines(outlookText);
-    if (accounts.length > 0) {
-      setOutlookAccounts(accounts);
-      setOutlookLoaded(true);
+  const handleLoad = async () => {
+    setLoading(true);
+    try {
+      const res = await parseOutlook(outlookText);
+      if (res.count > 0) {
+        setOutlookAccounts(res.accounts);
+        setOutlookLoaded(true);
+        setServerAccounts(res.accounts);
+        setServerCount(res.count);
+
+        await uploadOutlook(outlookText);
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -42,16 +33,36 @@ export function EmailPoolManager() {
     setOutlookAccounts([]);
     setOutlookLoaded(false);
     setOutlookText("");
+    setServerAccounts([]);
+    setServerCount(0);
   };
+
+  const handleLoadFromFile = async () => {
+    setLoading(true);
+    try {
+      const res = await listOutlook();
+      if (res.count > 0) {
+        setOutlookAccounts(res.accounts);
+        setOutlookLoaded(true);
+        setServerAccounts(res.accounts);
+        setServerCount(res.count);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const accounts = outlookLoaded ? outlookAccounts : serverAccounts;
+  const count = outlookLoaded ? outlookAccounts.length : serverCount;
 
   return (
     <div className="card animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
       <div className="flex items-center gap-2 mb-6">
         <Mail className="w-4 h-4 text-accent" />
         <h2 className="text-lg font-semibold text-text-primary">Outlook 邮箱池管理</h2>
-        {outlookLoaded && (
+        {(outlookLoaded || serverCount > 0) && (
           <span className="ml-auto text-xs bg-accent-glow text-accent px-2.5 py-1 rounded-full border border-accent/20">
-            {outlookAccounts.length} 个账号
+            {count} 个账号
           </span>
         )}
       </div>
@@ -97,11 +108,23 @@ export function EmailPoolManager() {
             />
           </div>
           <div className="flex gap-3">
-            <button className="btn-primary flex-1 flex items-center justify-center gap-2" onClick={handleLoad}>
+            <button
+              className="btn-primary flex-1 flex items-center justify-center gap-2"
+              onClick={handleLoad}
+              disabled={loading}
+            >
               <ClipboardPaste className="w-4 h-4" />
-              加载邮箱数据
+              {loading ? "加载中..." : "加载邮箱数据"}
             </button>
-            {outlookLoaded && (
+            <button
+              className="btn-secondary flex items-center justify-center gap-2"
+              onClick={handleLoadFromFile}
+              disabled={loading}
+            >
+              <Upload className="w-4 h-4" />
+              从文件加载
+            </button>
+            {(outlookLoaded || serverCount > 0) && (
               <button className="btn-secondary flex items-center justify-center gap-2" onClick={handleClear}>
                 <X className="w-4 h-4" />
                 清除
@@ -113,7 +136,7 @@ export function EmailPoolManager() {
 
       {activeTab === "preview" && (
         <div>
-          {outlookLoaded && outlookAccounts.length > 0 ? (
+          {count > 0 ? (
             <div className="overflow-auto max-h-80 rounded-lg border border-border">
               <table className="w-full text-sm">
                 <thead className="bg-bg-elevated sticky top-0">
@@ -125,12 +148,12 @@ export function EmailPoolManager() {
                   </tr>
                 </thead>
                 <tbody>
-                  {outlookAccounts.map((acc, i) => (
+                  {accounts.map((acc, i) => (
                     <tr key={i} className="border-t border-border hover:bg-bg-hover/50 transition-colors">
                       <td className="px-4 py-3 text-text-muted font-mono">{i + 1}</td>
                       <td className="px-4 py-3 text-text-primary font-mono">{acc.email}</td>
                       <td className="px-4 py-3 text-text-secondary font-mono text-xs">{acc.clientId.slice(0, 20)}...</td>
-                      <td className="px-4 py-3 text-text-muted font-mono text-xs">{acc.refreshToken.slice(0, 30)}...</td>
+                      <td className="px-4 py-3 text-text-muted font-mono text-xs">{acc.refreshToken ? acc.refreshToken.slice(0, 30) + "..." : "-"}</td>
                     </tr>
                   ))}
                 </tbody>
