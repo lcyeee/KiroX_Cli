@@ -1,12 +1,15 @@
 package main
 
 import (
+	"embed"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -17,6 +20,9 @@ import (
 	"reg_go/internal/email"
 	httputil2 "reg_go/internal/http"
 )
+
+//go:embed web/*
+var webFiles embed.FS
 
 // WebServer 网页端服务器
 type WebServer struct {
@@ -84,18 +90,42 @@ func NewWebServer(port string) *WebServer {
 func (ws *WebServer) Run() {
 	mux := http.NewServeMux()
 
-	// 静态文件
-	mux.Handle("/", http.FileServer(http.Dir(filepath.Join(".", "web"))))
-
-	// API 路由
+	// API 路由（先注册，确保优先匹配）
 	mux.HandleFunc("/api/config", ws.handleConfig)
 	mux.HandleFunc("/api/register", ws.handleRegister)
 	mux.HandleFunc("/api/tasks", ws.handleTasks)
 	mux.HandleFunc("/api/task/", ws.handleTaskDetail)
 	mux.HandleFunc("/api/results", ws.handleResults)
+	mux.HandleFunc("/api/results/stats", ws.handleStats)
+	mux.HandleFunc("/api/results/clear", ws.handleClearResults)
 	mux.HandleFunc("/api/outlook-csv", ws.handleOutlookCSV)
 	mux.HandleFunc("/api/ip-check", ws.handleIPCheck)
 	mux.HandleFunc("/api/task/cancel/", ws.handleCancelTask)
+
+	// 静态文件（使用嵌入的文件系统）
+	subFS, _ := fs.Sub(webFiles, "web")
+	fileServer := http.FileServer(http.FS(subFS))
+	
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		// API 路径不处理
+		if strings.HasPrefix(r.URL.Path, "/api/") {
+			http.NotFound(w, r)
+			return
+		}
+		// 检查嵌入文件中是否存在该路径
+		filePath := strings.TrimPrefix(r.URL.Path, "/")
+		if filePath == "" {
+			filePath = "index.html"
+		}
+		_, err := webFiles.Open("web/" + filePath)
+		if err != nil {
+			// 文件不存在，返回 index.html (SPA 支持)
+			http.ServeFileFS(w, r, webFiles, "web/index.html")
+			return
+		}
+		// 文件存在，提供服务
+		fileServer.ServeHTTP(w, r)
+	})
 
 	addr := ":" + ws.port
 	log.Printf("Web 服务器启动: http://localhost:%s", ws.port)
@@ -609,7 +639,63 @@ func (ws *WebServer) handleOutlookCSV(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// handleIPCheck 检测 IP 地区
+// handleStats 获取结果统计
+func (ws *WebServer) handleStats(w http.ResponseWriter, r *http.Request) {
+	setCORS(w)
+	if r.Method == "OPTIONS" {
+		return
+	}
+
+	outPath := ws.config.OutputPath
+	data, err := os.ReadFile(outPath)
+	if err != nil || len(data) == 0 {
+		ws.writeJSON(w, map[string]interface{}{
+			"total":     0,
+			"emails":    0,
+			"tokens":    0,
+			"file_size": 0,
+		})
+		return
+	}
+
+	var results []map[string]interface{}
+	json.Unmarshal(data, &results)
+
+	emails := 0
+	tokens := 0
+	for _, r := range results {
+		if r["email"] != nil && r["email"] != "" {
+			emails++
+		}
+		if r["refreshToken"] != nil && r["refreshToken"] != "" {
+			tokens++
+		}
+	}
+
+	ws.writeJSON(w, map[string]interface{}{
+		"total":     len(results),
+		"emails":    emails,
+		"tokens":    tokens,
+		"file_size": len(data),
+	})
+}
+
+// handleClearResults 清空结果
+func (ws *WebServer) handleClearResults(w http.ResponseWriter, r *http.Request) {
+	setCORS(w)
+	if r.Method == "OPTIONS" {
+		return
+	}
+	if r.Method != "POST" {
+		ws.writeError(w, http.StatusMethodNotAllowed, "只支持 POST")
+		return
+	}
+
+	outPath := ws.config.OutputPath
+	os.WriteFile(outPath, []byte("[]"), 0644)
+	ws.writeJSON(w, map[string]string{"status": "ok"})
+}
+
 func (ws *WebServer) handleIPCheck(w http.ResponseWriter, r *http.Request) {
 	setCORS(w)
 	if r.Method == "OPTIONS" {
@@ -632,35 +718,60 @@ func (ws *WebServer) handleIPCheck(w http.ResponseWriter, r *http.Request) {
 // checkIPRegion 检测 IP 归属地
 func (ws *WebServer) checkIPRegion(task *Task, proxy string) {
 	task.Logs = append(task.Logs, "[INFO] 正在检测当前 IP 地区...")
-	client := httputil2.NewNoRedirectTLSClient(proxy, "120")
-	req, err := fhttp.NewRequest("GET", "https://api.ip.sb/geoip", nil)
-	if err != nil {
-		task.Logs = append(task.Logs, fmt.Sprintf("[WARN] IP 检测失败: %v", err))
-		return
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		task.Logs = append(task.Logs, fmt.Sprintf("[WARN] IP 检测失败: %v", err))
-		return
-	}
-	defer resp.Body.Close()
 
-	var result map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		task.Logs = append(task.Logs, "[WARN] IP 检测解析响应失败")
-		return
-	}
-
-	ip, _ := result["ip"].(string)
-	if ip != "" {
-		country, _ := result["country"].(string)
-		region, _ := result["region"].(string)
-		city, _ := result["city"].(string)
-		isp, _ := result["isp"].(string)
-		if isp == "" {
-			isp, _ = result["organization"].(string)
+	checkWithProxy := func(p string) (map[string]interface{}, bool) {
+		client := httputil2.NewNoRedirectTLSClient(p, "120")
+		req, err := fhttp.NewRequest("GET", "https://api.ip.sb/geoip", nil)
+		if err != nil {
+			return nil, false
 		}
-		task.Logs = append(task.Logs, fmt.Sprintf("[INFO] 当前 IP: %s [%s %s %s] ISP: %s", ip, country, region, city, isp))
+		resp, err := client.Do(req)
+		if err != nil {
+			return nil, false
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != 200 {
+			return nil, false
+		}
+		var result map[string]interface{}
+		if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+			return nil, false
+		}
+		return result, true
+	}
+
+	// 先尝试通过代理检测
+	if proxy != "" {
+		if result, ok := checkWithProxy(proxy); ok {
+			if ip, _ := result["ip"].(string); ip != "" {
+				country, _ := result["country"].(string)
+				region, _ := result["region"].(string)
+				city, _ := result["city"].(string)
+				isp, _ := result["isp"].(string)
+				if isp == "" {
+					isp, _ = result["organization"].(string)
+				}
+				task.Logs = append(task.Logs, fmt.Sprintf("[INFO] 代理 IP: %s [%s %s %s] ISP: %s", ip, country, region, city, isp))
+				return
+			}
+		}
+		task.Logs = append(task.Logs, "[WARN] 代理不可用，尝试直连检测...")
+	}
+
+	// fallback: 直连检测
+	if result, ok := checkWithProxy(""); ok {
+		if ip, _ := result["ip"].(string); ip != "" {
+			country, _ := result["country"].(string)
+			region, _ := result["region"].(string)
+			city, _ := result["city"].(string)
+			isp, _ := result["isp"].(string)
+			if isp == "" {
+				isp, _ = result["organization"].(string)
+			}
+			task.Logs = append(task.Logs, fmt.Sprintf("[INFO] 当前 IP: %s [%s %s %s] ISP: %s", ip, country, region, city, isp))
+		}
+	} else {
+		task.Logs = append(task.Logs, "[WARN] IP 检测失败")
 	}
 }
 

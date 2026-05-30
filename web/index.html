@@ -700,10 +700,25 @@
   </section>
 
   <!-- Results -->
-  <section class="section" id="results" style="background: radial-gradient(ellipse at top, rgba(99,102,241,0.05) 0%, transparent 60%);">
+  <section class="section" id="results" style="background: radial-gradient(ellipse at top, rgba(96,165,250,0.05) 0%, transparent 60%);">
     <div class="container">
       <h2 class="section-title">注册结果</h2>
       <p class="section-subtitle">已成功注册的账号列表</p>
+      <!-- Stats -->
+      <div class="grid-3" style="margin-bottom: 24px;" id="statsPanel">
+        <div class="card" style="text-align: center; padding: 20px;">
+          <div style="font-size: 32px; font-weight: 800; color: var(--primary);" id="statTotal">0</div>
+          <div style="color: var(--text-secondary); font-size: 14px;">总记录数</div>
+        </div>
+        <div class="card" style="text-align: center; padding: 20px;">
+          <div style="font-size: 32px; font-weight: 800; color: var(--success);" id="statEmails">0</div>
+          <div style="color: var(--text-secondary); font-size: 14px;">有效邮箱</div>
+        </div>
+        <div class="card" style="text-align: center; padding: 20px;">
+          <div style="font-size: 32px; font-weight: 800; color: var(--warning);" id="statTokens">0</div>
+          <div style="color: var(--text-secondary); font-size: 14px;">有效 Token</div>
+        </div>
+      </div>
       <div class="card" style="overflow-x: auto;">
         <div class="btn-group" style="margin-bottom: 16px; justify-content: flex-end;">
           <button class="btn btn-secondary btn-sm" onclick="loadResults()">
@@ -712,11 +727,27 @@
             </svg>
             刷新
           </button>
-          <button class="btn btn-secondary btn-sm" onclick="exportResults()">
+          <button class="btn btn-secondary btn-sm" onclick="exportJSON()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
             </svg>
             导出 JSON
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="exportCSV()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14,2 14,8 20,8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+            导出 CSV
+          </button>
+          <button class="btn btn-danger btn-sm" onclick="clearResults()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+            </svg>
+            清空
           </button>
         </div>
         <table class="result-table" id="resultTable">
@@ -1022,13 +1053,14 @@
             <td>${r.subscription || '-'}</td>
           </tr>
         `).join('');
+        loadStats();
       } catch (e) {
         console.error('加载结果失败:', e);
       }
     }
     
-    // Export Results
-    async function exportResults() {
+    // Export Results as JSON
+    async function exportJSON() {
       try {
         const res = await fetch(API + '/results');
         const data = await res.json();
@@ -1041,6 +1073,61 @@
         URL.revokeObjectURL(url);
       } catch (e) {
         alert('导出失败: ' + e.message);
+      }
+    }
+    
+    // Export Results as CSV
+    async function exportCSV() {
+      try {
+        const res = await fetch(API + '/results');
+        const data = await res.json();
+        if (data.length === 0) {
+          alert('没有可导出的数据');
+          return;
+        }
+        const headers = ['email', 'password', 'clientId', 'clientSecret', 'refreshToken', 'creditUsed', 'creditLimit', 'subscription'];
+        const csvLines = [headers.join(',')];
+        for (const row of data) {
+          const vals = headers.map(h => {
+            const v = (row[h] || '').toString().replace(/"/g, '""');
+            return '"' + v + '"';
+          });
+          csvLines.push(vals.join(','));
+        }
+        const blob = new Blob(['\ufeff' + csvLines.join('\n')], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'kiro_results_' + new Date().toISOString().slice(0, 10) + '.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (e) {
+        alert('导出失败: ' + e.message);
+      }
+    }
+    
+    // Clear Results
+    async function clearResults() {
+      if (!confirm('确定清空所有注册结果？此操作不可恢复！')) return;
+      try {
+        await fetch(API + '/results/clear', { method: 'POST' });
+        loadResults();
+        loadStats();
+      } catch (e) {
+        alert('清空失败: ' + e.message);
+      }
+    }
+    
+    // Load Stats
+    async function loadStats() {
+      try {
+        const res = await fetch(API + '/results/stats');
+        const s = await res.json();
+        document.getElementById('statTotal').textContent = s.total || 0;
+        document.getElementById('statEmails').textContent = s.emails || 0;
+        document.getElementById('statTokens').textContent = s.tokens || 0;
+      } catch (e) {
+        console.error('加载统计失败:', e);
       }
     }
     
@@ -1090,6 +1177,7 @@
     // Init
     loadSettings();
     loadResults();
+    loadStats();
     loadCSV();
   </script>
 </body>
