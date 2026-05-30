@@ -25,7 +25,7 @@ func main() {
 	godotenv.Load()
 
 	count := flag.Int("n", 1, "注册数量")
-	output := flag.String("o", "", "结果输出到json件")
+	output := flag.String("o", "", "结果输出到json文件")
 	proxy := flag.String("p", "", "代理地址")
 	delay := flag.Int("d", 3, "串行模式间隔秒数")
 	concurrency := flag.Int("j", 1, "并发数")
@@ -37,7 +37,20 @@ func main() {
 	outlookCSV := flag.String("outlook-csv", "outlook.csv", "Outlook CSV 文件路径")
 	moEmailURL := flag.String("moemail-url", getEnv("MOEMAIL_BASE_URL", "https://api.moemail.app"), "MoEmail API 地址")
 	moEmailAPIKey := flag.String("moemail-key", getEnv("MOEMAIL_API_KEY", ""), "MoEmail API Key")
+	webPort := flag.String("web", "", "启动 Web 网页端口 (例如: -web 2011)")
+	cliMode := flag.Bool("cli", false, "强制使用命令行模式")
 	flag.Parse()
+
+	// 默认启动 Web 模式，除非指定 -cli
+	if !*cliMode {
+		if *webPort == "" {
+			*webPort = "2011"
+		}
+		log.Printf("启动 Web 服务器模式, 端口: %s", *webPort)
+		ws := NewWebServer(*webPort)
+		ws.Run()
+		return
+	}
 
 	if *debug {
 		log.SetFlags(log.Ltime | log.Lmicroseconds)

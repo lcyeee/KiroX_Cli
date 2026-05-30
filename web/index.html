@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KiroX - AWS/Kiro 账号注册平台</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --primary: #3b82f6;
+      --primary-dark: #2563eb;
+      --primary-light: #60a5fa;
+      --primary-50: #eff6ff;
+      --primary-100: #dbeafe;
+      --primary-200: #bfdbfe;
+      --bg: #f0f7ff;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f8fbff;
+      --text: #1e293b;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --gradient: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+      --radius: 16px;
+      --radius-sm: 8px;
+      --shadow: 0 4px 24px rgba(59,130,246,0.1);
+    }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+    
+    /* Header */
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: rgba(15, 15, 20, 0.9);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 20px;
+      font-weight: 800;
+      background: var(--gradient);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .logo svg { width: 32px; height: 32px; }
+    nav { display: flex; gap: 8px; }
+    nav a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      transition: all 0.2s;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    nav a:hover, nav a.active {
+      color: var(--text);
+      background: rgba(99, 102, 241, 0.1);
+    }
+    
+    /* Hero */
+    .hero {
+      padding: 160px 0 80px;
+      text-align: center;
+      background: radial-gradient(ellipse at top, rgba(96,165,250,0.15) 0%, transparent 60%);
+    }
+    .hero h1 {
+      font-size: 48px;
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 16px;
+    }
+    .hero h1 span {
+      background: var(--gradient);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      color: var(--text-secondary);
+      font-size: 18px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    
+    /* Cards Grid */
+    .section { padding: 60px 0; }
+    .section-title {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 32px;
+      text-align: center;
+    }
+    .section-subtitle {
+      color: var(--text-secondary);
+      text-align: center;
+      margin-top: -24px;
+      margin-bottom: 40px;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+    @media (max-width: 900px) {
+      .grid-3, .grid-2 { grid-template-columns: 1fr; }
+      .hero h1 { font-size: 32px; }
+    }
+    
+    /* Card Styles */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      transition: all 0.2s;
+    }
+    .card:hover {
+      border-color: var(--primary-light);
+      box-shadow: var(--shadow);
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .card-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--gradient);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .card-icon svg { width: 20px; height: 20px; color: white; }
+    .card-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .card-desc {
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+    
+    /* Form Elements */
+    .form-group { margin-bottom: 20px; }
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      font-size: 14px;
+    }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+    @media (max-width: 600px) {
+      .form-row { grid-template-columns: 1fr; }
+    }
+    
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      font-size: 14px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: var(--gradient);
+      color: white;
+    }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .btn-secondary {
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+    .btn-danger {
+      background: var(--error);
+      color: white;
+    }
+    .btn-sm { padding: 8px 16px; font-size: 12px; }
+    .btn-full { width: 100%; }
+    .btn-group { display: flex; gap: 12px; }
+    
+    /* Status Badge */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .badge::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+    .badge-success { background: rgba(34,197,94,0.15); color: var(--success); }
+    .badge-success::before { background: var(--success); }
+    .badge-warning { background: rgba(245,158,11,0.15); color: var(--warning); }
+    .badge-warning::before { background: var(--warning); }
+    .badge-error { background: rgba(239,68,68,0.15); color: var(--error); }
+    .badge-error::before { background: var(--error); }
+    .badge-info { background: rgba(99,102,241,0.15); color: var(--primary-light); }
+    .badge-info::before { background: var(--primary-light); }
+    
+    /* Task Card */
+    .task-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+    .task-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .task-title { font-weight: 600; }
+    .progress-bar {
+      height: 8px;
+      background: var(--bg);
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 12px 0;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--gradient);
+      border-radius: 4px;
+      transition: width 0.3s;
+    }
+    .task-stats {
+      display: flex;
+      gap: 24px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    .task-stats strong { color: var(--text); }
+    
+    /* Log Console */
+    .log-console {
+      background: #0a0a0f;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 12px;
+      line-height: 1.8;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .log-console::-webkit-scrollbar { width: 6px; }
+    .log-console::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    .log-line { display: block; }
+    .log-line.success { color: var(--success); }
+    .log-line.error { color: var(--error); }
+    .log-line.warning { color: var(--warning); }
+    .log-line.info { color: var(--primary-light); }
+    
+    /* Result Table */
+    .result-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .result-table th, .result-table td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .result-table th {
+      color: var(--text-secondary);
+      font-weight: 500;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .result-table tr:hover { background: rgba(99,102,241,0.05); }
+    .result-table .mono {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+    }
+    
+    /* Features Grid */
+    .feature-card {
+      text-align: center;
+      padding: 32px 24px;
+    }
+    .feature-card .card-icon {
+      margin: 0 auto 16px;
+    }
+    .feature-card .card-title {
+      margin-bottom: 8px;
+    }
+    
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+    .tab {
+      padding: 12px 20px;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-weight: 500;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active {
+      color: var(--primary-light);
+      border-bottom-color: var(--primary-light);
+    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .modal-overlay.show { opacity: 1; pointer-events: all; }
+    .modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      width: 90%;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+      transform: translateY(20px);
+      transition: transform 0.2s;
+    }
+    .modal-overlay.show .modal { transform: translateY(0); }
+    .modal-title {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+    
+    /* Checkbox */
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+    .checkbox-group input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--primary);
+    }
+    
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 40px 0;
+      color: var(--text-secondary);
+      font-size: 14px;
+      border-top: 1px solid var(--border);
+    }
+    
+    /* Animations */
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .animate-pulse { animation: pulse 2s ease-in-out infinite; }
+    
+    /* Responsive */
+    .hide-mobile { display: block; }
+    @media (max-width: 600px) {
+      .hide-mobile { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <div class="container header-inner">
+      <div class="logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+        </svg>
+        KiroX
+      </div>
+      <nav>
+        <a href="#home" class="active">首页</a>
+        <a href="#register">注册</a>
+        <a href="#tasks">任务</a>
+        <a href="#results">结果</a>
+        <a href="#settings">设置</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero" id="home">
+    <div class="container">
+      <h1>AWS/Kiro 账号<span>批量注册</span>平台</h1>
+      <p>基于浏览器指纹模拟的全自动注册系统，支持 Outlook/临时邮箱，一键批量注册 AWS 和 Kiro 账号</p>
+      <div style="margin-top: 32px; display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+        <a href="#register" class="btn btn-primary" style="padding: 14px 32px; font-size: 16px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+          </svg>
+          开始注册
+        </a>
+        <a href="#results" class="btn btn-secondary" style="padding: 14px 32px; font-size: 16px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+            <polyline points="14,2 14,8 20,8"/>
+          </svg>
+          查看结果
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="section" id="features">
+    <div class="container">
+      <h2 class="section-title">核心功能</h2>
+      <p class="section-subtitle">全自动注册流程，从设备指纹到邮箱验证，一气呵成</p>
+      <div class="grid-3">
+        <div class="card feature-card">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="3" width="20" height="14" rx="2"/>
+              <path d="M8 21h8M12 17v4"/>
+            </svg>
+          </div>
+          <div class="card-title">浏览器指纹模拟</div>
+          <div class="card-desc">Chrome 版本、GPU 型号、硬件配置、屏幕分辨率全维度模拟</div>
+        </div>
+        <div class="card feature-card">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+              <polyline points="22,6 12,13 2,6"/>
+            </svg>
+          </div>
+          <div class="card-title">多种邮箱支持</div>
+          <div class="card-desc">支持 MoEmail 临时邮箱和 Outlook 真实邮箱，灵活切换</div>
+        </div>
+        <div class="card feature-card">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+            </svg>
+          </div>
+          <div class="card-title">全自动流程</div>
+          <div class="card-desc">OIDC 注册 → 设备授权 → 邮箱验证 → 账号创建，一键完成</div>
+        </div>
+        <div class="card feature-card">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+            </svg>
+          </div>
+          <div class="card-title">并发注册</div>
+          <div class="card-desc">支持多并发批量注册，大幅提升注册效率</div>
+        </div>
+        <div class="card feature-card">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+              <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+          </div>
+          <div class="card-title">账号验活</div>
+          <div class="card-desc">自动验证账号状态，确保注册成功可用</div>
+        </div>
+        <div class="card feature-card">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/>
+            </svg>
+          </div>
+          <div class="card-title">IP 检测</div>
+          <div class="card-desc">自动检测代理 IP 归属地，确保网络环境正确</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Register -->
+  <section class="section" id="register" style="background: radial-gradient(ellipse at bottom, rgba(99,102,241,0.05) 0%, transparent 60%);">
+    <div class="container">
+      <h2 class="section-title">批量注册</h2>
+      <p class="section-subtitle">配置参数后点击开始，系统将自动执行注册流程</p>
+      <div class="grid-2">
+        <!-- Register Form -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+              </svg>
+            </div>
+            <div>
+              <div class="card-title">注册配置</div>
+              <div class="card-desc">设置批量参数和邮箱模式</div>
+            </div>
+          </div>
+          <form id="registerForm" onsubmit="return startRegister(event)">
+            <div class="form-row">
+              <div class="form-group">
+                <label>注册数量</label>
+                <input type="number" id="regCount" value="1" min="1" max="100" required>
+              </div>
+              <div class="form-group">
+                <label>并发数</label>
+                <input type="number" id="regConcurrency" value="1" min="1" max="10" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>代理地址（可选）</label>
+              <input type="text" id="regProxy" placeholder="http://127.0.0.1:7890">
+            </div>
+            <div class="form-group">
+              <label>注册间隔（秒）</label>
+              <input type="number" id="regDelay" value="3" min="0" max="60">
+            </div>
+            <div class="form-group">
+              <label>MoEmail API URL</label>
+              <input type="text" id="regMoEmailURL" value="https://api.moemail.app">
+            </div>
+            <div class="form-group">
+              <label>MoEmail API Key</label>
+              <input type="text" id="regMoEmailKey" placeholder="留空则使用默认值">
+            </div>
+            <div class="form-group">
+              <label class="checkbox-group">
+                <input type="checkbox" id="regOutlook" onchange="toggleOutlook()">
+                使用 Outlook 邮箱模式
+              </label>
+            </div>
+            <button type="submit" class="btn btn-primary btn-full" id="startBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+              </svg>
+              开始注册
+            </button>
+          </form>
+        </div>
+        <!-- Outlook CSV -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
+              </svg>
+            </div>
+            <div>
+              <div class="card-title">Outlook CSV 管理</div>
+              <div class="card-desc">格式: email----password</div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>CSV 内容</label>
+            <textarea id="outlookCSV" rows="6" placeholder="example1@outlook.com----Password123!&#10;example2@outlook.com----Password456!" style="font-family: monospace;"></textarea>
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-secondary" onclick="loadCSV()" style="flex:1;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+              </svg>
+              加载
+            </button>
+            <button class="btn btn-primary" onclick="saveCSV()" style="flex:1;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+                <polyline points="17,21 17,13 7,13 7,21"/>
+                <polyline points="7,3 7,8 15,8"/>
+              </svg>
+              保存
+            </button>
+          </div>
+          <div id="csvStatus" style="margin-top: 12px; font-size: 13px; color: var(--text-secondary);"></div>
+        </div>
+      </div>
+      <!-- IP Check -->
+      <div class="card" style="margin-top: 24px;">
+        <div class="card-header">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/>
+            </svg>
+          </div>
+          <div>
+            <div class="card-title">IP 地区检测</div>
+            <div class="card-desc">检测当前网络环境归属地</div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="checkIP()" id="ipCheckBtn">
+            检测 IP
+          </button>
+        </div>
+        <div id="ipResult" class="log-console" style="max-height: 120px;"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tasks -->
+  <section class="section" id="tasks">
+    <div class="container">
+      <h2 class="section-title">任务列表</h2>
+      <p class="section-subtitle">所有注册任务状态一览</p>
+      <div id="taskList">
+        <div class="card" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin: 0 auto 16px; opacity: 0.5;">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/>
+          </svg>
+          <p>暂无任务，请先在上方创建注册任务</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Results -->
+  <section class="section" id="results" style="background: radial-gradient(ellipse at top, rgba(99,102,241,0.05) 0%, transparent 60%);">
+    <div class="container">
+      <h2 class="section-title">注册结果</h2>
+      <p class="section-subtitle">已成功注册的账号列表</p>
+      <div class="card" style="overflow-x: auto;">
+        <div class="btn-group" style="margin-bottom: 16px; justify-content: flex-end;">
+          <button class="btn btn-secondary btn-sm" onclick="loadResults()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 4 23 10 17 10M1 20v-6a2 2 0 012-2h5M3 16l4-4-4-4"/>
+            </svg>
+            刷新
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="exportResults()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+            </svg>
+            导出 JSON
+          </button>
+        </div>
+        <table class="result-table" id="resultTable">
+          <thead>
+            <tr>
+              <th>邮箱</th>
+              <th>密码</th>
+              <th>Client ID</th>
+              <th>Client Secret</th>
+              <th>Refresh Token</th>
+              <th>额度</th>
+              <th>订阅</th>
+            </tr>
+          </thead>
+          <tbody id="resultBody">
+            <tr><td colspan="7" style="text-align: center; color: var(--text-secondary);">暂无数据</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Settings -->
+  <section class="section" id="settings">
+    <div class="container">
+      <h2 class="section-title">系统设置</h2>
+      <p class="section-subtitle">全局配置参数</p>
+      <div class="card" style="max-width: 600px; margin: 0 auto;">
+        <form onsubmit="return saveSettings(event)">
+          <div class="form-group">
+            <label>默认代理</label>
+            <input type="text" id="setProxy" placeholder="http://127.0.0.1:7890">
+          </div>
+          <div class="form-group">
+            <label>MoEmail API URL</label>
+            <input type="text" id="setMoEmailURL">
+          </div>
+          <div class="form-group">
+            <label>MoEmail API Key</label>
+            <input type="text" id="setMoEmailKey" placeholder="留空则不发送 API Key">
+          </div>
+          <div class="form-group">
+            <label>Outlook CSV 路径</label>
+            <input type="text" id="setOutlookCSV" value="outlook.csv">
+          </div>
+          <div class="form-group">
+            <label>默认注册间隔（秒）</label>
+            <input type="number" id="setDelay" value="3" min="0" max="60">
+          </div>
+          <button type="submit" class="btn btn-primary btn-full">保存设置</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <p>KiroX - AWS/Kiro 账号批量注册平台 &copy; 2026</p>
+    </div>
+  </footer>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="modal">
+    <div class="modal">
+      <div class="modal-title">任务详情</div>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+
+  <script>
+    const API = '/api';
+    let currentTaskId = null;
+    let pollInterval = null;
+    
+    // Navigation
+    document.querySelectorAll('nav a').forEach(link => {
+      link.addEventListener('click', function(e) {
+        document.querySelectorAll('nav a').forEach(l => l.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+    
+    // Toggle Outlook mode
+    function toggleOutlook() {
+      const checked = document.getElementById('regOutlook').checked;
+      document.getElementById('outlookCSV').closest('.card').style.display = checked ? 'block' : 'none';
+    }
+    
+    // Load CSV
+    async function loadCSV() {
+      const status = document.getElementById('csvStatus');
+      status.textContent = '加载中...';
+      try {
+        const res = await fetch(API + '/outlook-csv');
+        const data = await res.json();
+        if (data.exists) {
+          document.getElementById('outlookCSV').value = data.content;
+          status.textContent = `已加载 ${data.count} 个账号`;
+          status.style.color = 'var(--success)';
+        } else {
+          status.textContent = 'CSV 文件不存在';
+          status.style.color = 'var(--warning)';
+        }
+      } catch (e) {
+        status.textContent = '加载失败: ' + e.message;
+        status.style.color = 'var(--error)';
+      }
+    }
+    
+    // Save CSV
+    async function saveCSV() {
+      const status = document.getElementById('csvStatus');
+      const content = document.getElementById('outlookCSV').value;
+      status.textContent = '保存中...';
+      try {
+        const res = await fetch(API + '/outlook-csv', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content })
+        });
+        const data = await res.json();
+        status.textContent = `已保存 ${data.count} 个账号`;
+        status.style.color = 'var(--success)';
+      } catch (e) {
+        status.textContent = '保存失败: ' + e.message;
+        status.style.color = 'var(--error)';
+      }
+    }
+    
+    // Check IP
+    async function checkIP() {
+      const btn = document.getElementById('ipCheckBtn');
+      const result = document.getElementById('ipResult');
+      btn.disabled = true;
+      btn.textContent = '检测中...';
+      result.innerHTML = '<span class="log-line info">正在检测...</span>';
+      try {
+        const proxy = document.getElementById('regProxy').value || '';
+        const res = await fetch(API + '/ip-check?proxy=' + encodeURIComponent(proxy));
+        const data = await res.json();
+        result.innerHTML = data.logs.map(l => {
+          const cls = l.includes('成功') ? 'success' : l.includes('失败') ? 'error' : l.includes('WARN') ? 'warning' : 'info';
+          return `<span class="log-line ${cls}">${l}</span>`;
+        }).join('');
+      } catch (e) {
+        result.innerHTML = `<span class="log-line error">检测失败: ${e.message}</span>`;
+      }
+      btn.disabled = false;
+      btn.textContent = '检测 IP';
+    }
+    
+    // Start Register
+    async function startRegister(e) {
+      e.preventDefault();
+      const btn = document.getElementById('startBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="animate-pulse">注册中...</span>';
+      try {
+        const body = {
+          count: parseInt(document.getElementById('regCount').value),
+          concurrency: parseInt(document.getElementById('regConcurrency').value),
+          proxy: document.getElementById('regProxy').value,
+          delay: parseInt(document.getElementById('regDelay').value),
+          mo_email_url: document.getElementById('regMoEmailURL').value,
+          mo_email_key: document.getElementById('regMoEmailKey').value,
+          use_outlook: document.getElementById('regOutlook').checked
+        };
+        const res = await fetch(API + '/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        currentTaskId = data.task_id;
+        loadTasks();
+        // Start polling
+        if (pollInterval) clearInterval(pollInterval);
+        pollInterval = setInterval(loadTasks, 2000);
+      } catch (e) {
+        alert('启动失败: ' + e.message);
+      }
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg> 开始注册`;
+      return false;
+    }
+    
+    // Load Tasks
+    async function loadTasks() {
+      try {
+        const res = await fetch(API + '/tasks');
+        const tasks = await res.json();
+        if (tasks.length === 0) {
+          document.getElementById('taskList').innerHTML = `
+            <div class="card" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin: 0 auto 16px; opacity: 0.5;">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/>
+              </svg>
+              <p>暂无任务，请先在上方创建注册任务</p>
+            </div>`;
+          return;
+        }
+        document.getElementById('taskList').innerHTML = tasks.map(task => {
+          const pct = task.count > 0 ? Math.round((task.progress / task.count) * 100) : 0;
+          let statusClass = 'badge-info';
+          if (task.status === 'completed') statusClass = 'badge-success';
+          if (task.status === 'failed') statusClass = 'badge-error';
+          if (task.status === 'cancelled') statusClass = 'badge-warning';
+          return `
+          <div class="task-card" style="margin-bottom: 16px;">
+            <div class="task-header">
+              <div class="task-title">${task.id}</div>
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <span class="badge ${statusClass}">${task.status === 'running' ? '运行中' : task.status === 'completed' ? '已完成' : task.status === 'failed' ? '失败' : '已取消'}</span>
+                ${task.status === 'running' ? `<button class="btn btn-danger btn-sm" onclick="cancelTask('${task.id}')">取消</button>` : ''}
+              </div>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: ${pct}%"></div>
+            </div>
+            <div class="task-stats">
+              <span>总数: <strong>${task.count}</strong></span>
+              <span>进度: <strong>${task.progress}</strong></span>
+              <span>成功: <strong style="color: var(--success)">${task.success}</strong></span>
+              <span>失败: <strong style="color: var(--error)">${task.failed}</strong></span>
+            </div>
+            <button class="btn btn-secondary btn-sm" style="margin-top: 12px;" onclick="showTaskDetail('${task.id}')">
+              查看详情 & 日志
+            </button>
+          </div>`;
+        }).join('');
+        // Check if all tasks completed
+        const hasRunning = tasks.some(t => t.status === 'running');
+        if (!hasRunning && pollInterval) {
+          clearInterval(pollInterval);
+          pollInterval = null;
+        }
+      } catch (e) {
+        console.error('加载任务列表失败:', e);
+      }
+    }
+    
+    // Cancel Task
+    async function cancelTask(taskId) {
+      if (!confirm('确定取消此任务？')) return;
+      try {
+        await fetch(API + '/task/cancel/' + taskId, { method: 'POST' });
+        loadTasks();
+      } catch (e) {
+        alert('取消失败: ' + e.message);
+      }
+    }
+    
+    // Show Task Detail (modal)
+    async function showTaskDetail(taskId) {
+      try {
+        const res = await fetch(API + '/task/' + taskId);
+        const task = await res.json();
+        const logs = task.logs.map(l => {
+          const cls = l.includes('成功') ? 'success' : l.includes('失败') || l.includes('ERROR') ? 'error' : l.includes('WARN') ? 'warning' : 'info';
+          return `<span class="log-line ${cls}">${l}</span>`;
+        }).join('');
+        const pct = task.count > 0 ? Math.round((task.progress / task.count) * 100) : 0;
+        document.getElementById('modalContent').innerHTML = `
+          <div style="margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <strong>${task.id}</strong>
+              <span class="badge ${task.status === 'completed' ? 'badge-success' : task.status === 'running' ? 'badge-info' : 'badge-error'}">${task.status}</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" style="width: ${pct}%"></div></div>
+            <div class="task-stats">
+              <span>总数: <strong>${task.count}</strong></span>
+              <span>进度: <strong>${task.progress}</strong></span>
+              <span>成功: <strong style="color: var(--success)">${task.success}</strong></span>
+              <span>失败: <strong style="color: var(--error)">${task.failed}</strong></span>
+            </div>
+          </div>
+          <div class="log-console">${logs}</div>`;
+        document.getElementById('modal').classList.add('show');
+      } catch (e) {
+        alert('加载详情失败: ' + e.message);
+      }
+    }
+    
+    // Load Results
+    async function loadResults() {
+      try {
+        const res = await fetch(API + '/results');
+        const results = await res.json();
+        if (results.length === 0) {
+          document.getElementById('resultBody').innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-secondary);">暂无数据</td></tr>';
+          return;
+        }
+        document.getElementById('resultBody').innerHTML = results.map(r => `
+          <tr>
+            <td class="mono">${r.email || '-'}</td>
+            <td class="mono" style="font-size: 11px;">${r.password || '-'}</td>
+            <td class="mono" style="font-size: 11px; max-width: 120px; overflow: hidden; text-overflow: ellipsis;">${r.clientId || '-'}</td>
+            <td class="mono" style="font-size: 11px; max-width: 120px; overflow: hidden; text-overflow: ellipsis;">${r.clientSecret || '-'}</td>
+            <td class="mono" style="font-size: 11px; max-width: 150px; overflow: hidden; text-overflow: ellipsis;">${r.refreshToken || '-'}</td>
+            <td>${r.creditUsed !== undefined ? r.creditUsed : '-'}</td>
+            <td>${r.subscription || '-'}</td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        console.error('加载结果失败:', e);
+      }
+    }
+    
+    // Export Results
+    async function exportResults() {
+      try {
+        const res = await fetch(API + '/results');
+        const data = await res.json();
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'kiro_results_' + new Date().toISOString().slice(0, 10) + '.json';
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (e) {
+        alert('导出失败: ' + e.message);
+      }
+    }
+    
+    // Load Settings
+    async function loadSettings() {
+      try {
+        const res = await fetch(API + '/config');
+        const cfg = await res.json();
+        document.getElementById('setProxy').value = cfg.proxy || '';
+        document.getElementById('setMoEmailURL').value = cfg.mo_email_url || '';
+        document.getElementById('setMoEmailKey').value = cfg.mo_email_key || '';
+        document.getElementById('setOutlookCSV').value = cfg.outlook_csv || '';
+        document.getElementById('setDelay').value = cfg.delay || 3;
+      } catch (e) {
+        console.error('加载设置失败:', e);
+      }
+    }
+    
+    // Save Settings
+    async function saveSettings(e) {
+      e.preventDefault();
+      try {
+        const body = {
+          proxy: document.getElementById('setProxy').value,
+          mo_email_url: document.getElementById('setMoEmailURL').value,
+          mo_email_key: document.getElementById('setMoEmailKey').value,
+          outlook_csv: document.getElementById('setOutlookCSV').value,
+          delay: parseInt(document.getElementById('setDelay').value)
+        };
+        await fetch(API + '/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        alert('设置已保存');
+      } catch (e) {
+        alert('保存失败: ' + e.message);
+      }
+      return false;
+    }
+    
+    // Close modal on overlay click
+    document.getElementById('modal').addEventListener('click', function(e) {
+      if (e.target === this) this.classList.remove('show');
+    });
+    
+    // Init
+    loadSettings();
+    loadResults();
+    loadCSV();
+  </script>
+</body>
+</html>
